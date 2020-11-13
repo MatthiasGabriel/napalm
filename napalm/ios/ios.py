@@ -3282,17 +3282,23 @@ class IOSDriver(NetworkDriver):
             command = "traceroute {}".format(destination)
         if source:
             command += " source {}".format(source)
-        if ttl:
-            if isinstance(ttl, int) and 0 <= ttl <= 255:
-                command += " ttl 0 {}".format(str(ttl))
-        if timeout:
-            # Timeout should be an integer between 1 and 3600
-            if isinstance(timeout, int) and 1 <= timeout <= 3600:
-                command += " timeout {}".format(str(timeout))
-
+        if ttl and isinstance(ttl, int) and 0 <= ttl <= 255:
+            command += " ttl 0 {}".format(str(ttl))
+            calculation_ttl = ttl
+        else:
+            # Default ttl on ios is 30
+            calculation_ttl = 30
+        # Timeout should be an integer between 1 and 3600
+        if timeout and isinstance(timeout, int) and 1 <= timeout <= 3600:
+            command += " timeout {}".format(str(timeout))
+            calculation_timeout = timeout
+        else:
+            # default timeout on ios is 5
+            calculation_timeout = 5
         # Calculation to leave enough time for traceroute to complete assumes send_command
         # delay of .2 seconds.
-        max_loops = (5 * ttl * timeout) + 150
+
+        max_loops = (5 * calculation_ttl * calculation_timeout) + 150
         if max_loops < 500:  # Make sure max_loops isn't set artificially low
             max_loops = 500
         output = self.device.send_command(command, max_loops=max_loops)

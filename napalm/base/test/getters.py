@@ -48,7 +48,7 @@ def wrap_test_cases(func):
     func.__dict__["build_test_cases"] = True
 
     @functools.wraps(func)
-    def mock_wrapper(cls, test_case):
+    def mock_wrapper(cls, test_case, **kwargs):
         for patched_attr in cls.device.patched_attrs:
             attr = getattr(cls.device, patched_attr)
             attr.current_test = func.__name__
@@ -57,7 +57,7 @@ def wrap_test_cases(func):
         try:
             # This is an ugly, ugly, ugly hack because some python objects don't load
             # as expected. For example, dicts where integers are strings
-            result = json.loads(json.dumps(func(cls, test_case)))
+            result = json.loads(json.dumps(func(cls, test_case, **kwargs)))
         except IOError:
             if test_case == "no_test_case_found":
                 pytest.fail("No test case for '{}' found".format(func.__name__))
@@ -451,10 +451,16 @@ class BaseTestGetters(object):
         return get_ping
 
     @wrap_test_cases
-    def test_traceroute(self, test_case):
+    @pytest.mark.parametrize("arguments",
+                             [pytest.param({}, id="with default values"),
+                              pytest.param({'ttl': None, 'timeout': None},
+                                           id="without ttl and timeout"),
+                              pytest.param({'ttl': 128, 'timeout': 2},
+                                           id="with specified ttl and timeout")])
+    def test_traceroute(self, test_case, arguments):
         """Test traceroute."""
         destination = "8.8.8.8"
-        get_traceroute = self.device.traceroute(destination)
+        get_traceroute = self.device.traceroute(destination, **arguments)
         assert isinstance(get_traceroute.get("success"), dict)
         traceroute_results = get_traceroute.get("success", {})
 

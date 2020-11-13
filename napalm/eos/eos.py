@@ -1566,9 +1566,16 @@ class EOSDriver(NetworkDriver):
             source_opt = "-s {source}".format(source=source)
         if ttl:
             ttl_opt = "-m {ttl}".format(ttl=ttl)
+            calculation_ttl = ttl
+        else:
+            calculation_ttl = c.TRACEROUTE_TTL
         if timeout:
             timeout_opt = "-w {timeout}".format(timeout=timeout)
-        total_timeout = timeout * ttl
+            calculation_timeout = timeout
+        else:
+            calculation_timeout = c.TRACEROUTE_TIMEOUT
+
+        total_timeout = calculation_timeout * calculation_ttl
         # `ttl`, `source` and `timeout` are not supported by default CLI
         # so we need to go through the bash and set a specific timeout
         commands.append(
@@ -1617,7 +1624,7 @@ class EOSDriver(NetworkDriver):
                 if rtt:
                     rtt = float(rtt)
                 else:
-                    rtt = timeout * 1000.0
+                    rtt = calculation_timeout * 1000.0
                 if not host_name:
                     host_name = previous_probe_host_name
                 if not ip_address:

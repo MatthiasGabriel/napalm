@@ -2134,6 +2134,9 @@ class IOSXRDriver(NetworkDriver):
             ttl_tag = "<MaxTTL>{maxttl}</MaxTTL>".format(maxttl=ttl)
         if timeout:
             timeout_tag = "<Timeout>{timeout}</Timeout>".format(timeout=timeout)
+            calculation_timeout = timeout
+        else:
+            calculation_timeout = C.TRACEROUTE_TIMEOUT
         if vrf:
             vrf_tag = "<VRFName>{vrf}</VRFName>".format(vrf=vrf)
 
@@ -2196,7 +2199,7 @@ class IOSXRDriver(NetworkDriver):
                         str, last_probe_ip_address
                     ),
                     "host_name": napalm.base.helpers.convert(str, last_probe_host_name),
-                    "rtt": timeout * 1000.0,
+                    "rtt": calculation_timeout * 1000.0,
                 }
                 continue
             if tag_name == "HopAddress":
